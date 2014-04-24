@@ -62,7 +62,7 @@ var session_builder = module.exports = function session_builder(opts) {
 	function view_session(req) {
 		var result = copy(req.session.client);
 		result.messages = view_session_messages(req);
-		result.$ref = ref(req, 'api/session');
+		result.$ref = ref(req, opts.path);
 		return result;
 	}
 
