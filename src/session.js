@@ -84,7 +84,7 @@ var session_builder = module.exports = function session_builder(opts) {
 	};
 
 	/** Changes current session data */
-	routes.PUT = function api_session_post(req, res) {
+	routes.PUT = function api_session_put(req, res) {
 		debug.assert(req.session).is('object');
 		debug.assert(req.body).is('object');
 		req.session.client = copy(req.body);
@@ -92,7 +92,7 @@ var session_builder = module.exports = function session_builder(opts) {
 	};
 
 	/** Changes current session data */
-	routes.DELETE = function api_session_post(req, res) {
+	routes.DELETE = function api_session_delete(req, res) {
 		debug.assert(req.session).is('object');
 		req.session.client = {};
 		init_session(req);
@@ -109,7 +109,7 @@ var session_builder = module.exports = function session_builder(opts) {
 		return view_session_messages(req);
 	};
 
-	/** View messages */
+	/** Create new message */
 	routes.messages.POST = function(req, res) {
 		init_session(req);
 		var msg = create_message(req, req.body);
