@@ -2,12 +2,14 @@
 
 "use strict";
 
+var _Q = require('q');
 var copy = require('nor-data').copy;
 var merge = require('merge');
 var is = require('nor-is');
 var debug = require('nor-debug');
 var HTTPError = require('nor-express').HTTPError;
 var ref = require('nor-ref');
+var ARRAY = require('nor-array');
 
 /** Initialize the session */
 function init_session(req) {
@@ -47,13 +49,13 @@ var session_builder = module.exports = function session_builder(opts) {
 		result.$ref = ref(req, opts.path + '/messages', msg.$id );
 		return result;
 	}
-	
+
 	/** Prepare for public */
 	function view_session_messages(req) {
 		var result = {};
-		result.$ = Object.keys(req.session.client.messages).filter(is.uuid).map(function(uuid) {
+		result.$ = ARRAY(Object.keys(req.session.client.messages)).filter(is.uuid).map(function(uuid) {
 			return view_session_message(req, req.session.client.messages[uuid]);
-		});
+		}).valueOf();
 		result.$ref = ref(req, opts.path+'/messages');
 		return result;
 	}
@@ -67,36 +69,44 @@ var session_builder = module.exports = function session_builder(opts) {
 	}
 
 	var routes = {};
-		
+
 	/** Returns current session data */
-	routes.GET = function api_session_get(req, res) {
-		init_session(req);
-		return view_session(req);
+	routes.GET = function api_session_get(req/*, res*/) {
+		return _Q.fcall(function api_session_get_() {
+			init_session(req);
+			return view_session(req);
+		});
 	};
 
 	/** Changes current session data */
 	routes.POST = function api_session_post(req, res) {
-		init_session(req);
-		debug.assert(req.body).is('object');
-		debug.assert(req.session.client).is('object');
-		req.session.client = merge(req.session.client, req.body);
-		res.redirect(303, ref(req, opts.path) );
+		return _Q.fcall(function api_session_post_() {
+			init_session(req);
+			debug.assert(req.body).is('object');
+			debug.assert(req.session.client).is('object');
+			req.session.client = merge(req.session.client, req.body);
+			res.redirect(303, ref(req, opts.path) );
+		});
 	};
 
 	/** Changes current session data */
 	routes.PUT = function api_session_put(req, res) {
-		debug.assert(req.session).is('object');
-		debug.assert(req.body).is('object');
-		req.session.client = copy(req.body);
-		res.redirect(303, ref(req, opts.path) );
+		return _Q.fcall(function api_session_put_() {
+			debug.assert(req.session).is('object');
+			debug.assert(req.body).is('object');
+			req.session.client = copy(req.body);
+			res.redirect(303, ref(req, opts.path) );
+		});
 	};
 
 	/** Changes current session data */
 	routes.DELETE = function api_session_delete(req, res) {
-		debug.assert(req.session).is('object');
-		req.session.client = {};
-		init_session(req);
-		res.redirect(303, ref(req, opts.path) );
+		return _Q.fcall(function api_session_delete_() {
+			debug.assert(req.session).is('object');
+			req.session.client = {};
+			init_session(req);
+			res.redirect(303, ref(req, opts.path) );
+		});
 	};
 
 	/** Messages Interface */
@@ -104,41 +114,49 @@ var session_builder = module.exports = function session_builder(opts) {
 	routes.messages = {};
 
 	/** View messages */
-	routes.messages.GET = function(req, res) {
-		init_session(req);
-		return view_session_messages(req);
+	routes.messages.GET = function session_messages_get(req/*, res*/) {
+		return _Q.fcall(function session_messages_get_() {
+			init_session(req);
+			return view_session_messages(req);
+		});
 	};
 
 	/** Create new message */
-	routes.messages.POST = function(req, res) {
-		init_session(req);
-		var msg = create_message(req, req.body);
-		res.redirect(303, ref(req, opts.path+'/messages', msg.$id) );
+	routes.messages.POST = function session_messages_post_(req, res) {
+		return _Q.fcall(function session_messages_post_() {
+			init_session(req);
+			var msg = create_message(req, req.body);
+			res.redirect(303, ref(req, opts.path+'/messages', msg.$id) );
+		});
 	};
 
 	routes.messages[':uuid'] = {};
 
 	/** View message by uuid */
-	routes.messages[':uuid'].GET = function(req, res) {
-		debug.assert(req.params.uuid).is('uuid');
-		var uuid = req.params.uuid;
-		init_session(req);
-		if(req.session.client.messages[uuid] === undefined) {
-			throw new HTTPError(404);
-		}
-		return view_session_message(req, req.session.client.messages[uuid] );
+	routes.messages[':uuid'].GET = function session_messages_uuid_get(req/*, res*/) {
+		return _Q.fcall(function session_messages_uuid_get_() {
+			debug.assert(req.params.uuid).is('uuid');
+			var uuid = req.params.uuid;
+			init_session(req);
+			if(req.session.client.messages[uuid] === undefined) {
+				throw new HTTPError(404);
+			}
+			return view_session_message(req, req.session.client.messages[uuid] );
+		});
 	};
 
 	/** Delete message by uuid */
 	routes.messages[':uuid'].DELETE = function(req, res) {
-		debug.assert(req.params.uuid).is('uuid');
-		var uuid = req.params.uuid;
-		init_session(req);
-		if(req.session.client.messages[uuid] === undefined) {
-			throw new HTTPError(404);
-		}
-		delete_message(req, uuid);
-		res.redirect(303, ref(req, opts.path+'/messages') );
+		return _Q.fcall(function session_messages_uuid_delete_() {
+			debug.assert(req.params.uuid).is('uuid');
+			var uuid = req.params.uuid;
+			init_session(req);
+			if(req.session.client.messages[uuid] === undefined) {
+				throw new HTTPError(404);
+			}
+			delete_message(req, uuid);
+			res.redirect(303, ref(req, opts.path+'/messages') );
+		});
 	};
 
 	// Returns the resource
